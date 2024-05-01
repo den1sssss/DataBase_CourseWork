@@ -50,17 +50,26 @@ df_orders = pd.DataFrame(rows, columns=[desc[0] for desc in cur.description])
 
 # Display results.
 st.subheader("Orders Table:")
-st.dataframe(df_orders)
+
+# Compact representation of orders table
+st.write(df_orders)
 
 # Add functionality to insert new rows into the orders table
 st.subheader("Add New Order")
-order_id = st.text_input("Order ID")
-sale_id = st.text_input("Sale ID")
-customer_id = st.text_input("Customer ID")
-restaurant_id = st.text_input("Restaurant ID")
-employee_id = st.text_input("Employee ID")
-cheque = st.text_input("Cheque")
-sys_date_load = st.date_input("SysDateLoad", value=pd.Timestamp("today"))
+
+col1, col2, col3 = st.columns([1, 1, 1])
+with col1:
+    order_id = st.text_input("Order ID")
+    sale_id = st.text_input("Sale ID")
+    customer_id = st.text_input("Customer ID")
+
+with col2:
+    restaurant_id = st.text_input("Restaurant ID")
+    employee_id = st.text_input("Employee ID")
+    cheque = st.text_input("Cheque")
+
+with col3:
+    sys_date_load = st.date_input("SysDateLoad", value=pd.Timestamp("today"))
 
 if st.button("Add Order"):
     # Check if the id_sysDateLoad exists in sysPersonsLoad table
@@ -104,6 +113,29 @@ if st.button("Add Order"):
         else:
             # Обработка случая, когда id_sysDateLoad не найден
             st.error(f"id_sysDateLoad for date {sys_date_load} not found")
+
+# Add functionality to delete orders
+st.sidebar.subheader("Delete Order")
+order_to_delete = st.sidebar.text_input("Enter Order ID to delete:")
+if st.sidebar.button("Delete Order"):
+    try:
+        cur.execute('DELETE FROM "orders" WHERE "id_order" = %s', (order_to_delete,))
+        st.sidebar.success("Order deleted successfully!")
+    except psycopg2.Error as e:
+        st.sidebar.error(f"Error deleting order: {e}")
+
+# Add table of employees and warehouse
+cur.execute('SELECT * FROM "employee";')
+employee_data = cur.fetchall()
+df_employees = pd.DataFrame(employee_data, columns=[desc[0] for desc in cur.description])
+st.sidebar.subheader("Employees Table:")
+st.sidebar.write(df_employees)
+
+cur.execute('SELECT * FROM "warehouse";')
+warehouse_data = cur.fetchall()
+df_warehouse = pd.DataFrame(warehouse_data, columns=[desc[0] for desc in cur.description])
+st.sidebar.subheader("Warehouse Table:")
+st.sidebar.write(df_warehouse)
 
 # Commit the changes to the database.
 conn.commit()
